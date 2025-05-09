@@ -3,6 +3,7 @@
 {% block title %}جزئیات ارسال تکلیف{% endblock %}
 
 {% block content %}
+<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
 <h1 class="text-center mb-4">جزئیات ارسال تکلیف</h1>
 
 <div class="card bg-secondary text-light mb-4">
@@ -20,7 +21,7 @@
         <p>{{ submission.feedback if submission.feedback else 'هنوز بازخوردی ثبت نشده' }}</p> {# نمایش بازخورد #}
 
         <h5 class="mt-4">عملیات:</h5>
-        <a href="{{ url_for('download_file', filename=submission.filename) }}" class="btn btn-success">دانلود فایل</a>
+        <a href="{{ url_for('uploaded_file', filename=submission.filename) }}" class="btn btn-success">دانلود فایل</a>
 
         <p class="mt-4"><a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">بازگشت به داشبورد</a></p>
     </div>

@@ -3,47 +3,14 @@
 {% block title %}داشبورد استاد{% endblock %}
 
 {% block content %}
+<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
 <h1 class="text-center mb-4">داشبورد استاد</h1>
 <p class="text-center">خوش آمدید، استاد {{ current_user.last_name }} عزیز!</p>
 
 <div class="text-center mb-4">
     <a href="{{ url_for('manage_courses') }}" class="btn btn-info text-dark">مدیریت درس‌ها</a>
+    <a href="{{ url_for('create_assignment') }}" class="btn btn-primary">برای تعریف تکلیف</a>
 </div>
-
-<h2 class="mt-5">تعریف تکلیف جدید</h2>
-{% if courses %}
-<div class="card bg-secondary text-light mb-4">
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('create_assignment') }}">
-            <div class="mb-3">
-                <label for="title" class="form-label">عنوان تکلیف:</label>
-                <input type="text" class="form-control form-control-dark" id="title" name="title" required>
-            </div>
-            <div class="mb-3">
-                <label for="course_id" class="form-label">درس:</label>
-                <select class="form-select form-select-dark" id="course_id" name="course_id" required>
-                    {% for course in courses %}
-                        <option value="{{ course.id }}">{{ course.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">توضیحات:</label>
-                <textarea class="form-control form-control-dark" id="description" name="description" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="deadline" class="form-label">مهلت ارسال:</label>
-                <input type="datetime-local" class="form-control form-control-dark" id="deadline" name="deadline">
-            </div>
-            <button type="submit" class="btn btn-primary">ایجاد تکلیف</button>
-        </form>
-    </div>
-</div>
-{% else %}
- <div class="alert alert-warning text-center" role="alert">
-        برای تعریف تکلیف، ابتدا باید حداقل یک درس ایجاد کنید. به صفحه <a href="{{ url_for('manage_courses') }}" class="alert-link text-dark">مدیریت درس‌ها</a> بروید.
-    </div>
-{% endif %}
 
 
 <h2 class="mt-5" id="assignments">تکالیف تعریف شده شما</h2> {# اضافه شدن id برای لینک از صفحه مدیریت درس #}

@@ -3,6 +3,7 @@
 {% block title %}ویرایش تکلیف: {{ assignment.title }}{% endblock %}
 
 {% block content %}
+<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
 <h1 class="text-center mb-4">ویرایش تکلیف: {{ assignment.title }}</h1>
 
 <div class="card bg-secondary text-light mb-4">
@@ -13,7 +14,7 @@
                 <input type="text" class="form-control form-control-dark" id="title" name="title" value="{{ assignment.title }}" required>
             </div>
             <div class="mb-3">
-                <label for="course_id" class="form-label">درس:</label>
+                <label for="course_id" class="form-select form-label">درس:</label>
                 <select class="form-select form-select-dark" id="course_id" name="course_id" required>
                     {% for course in courses %}
                         <option value="{{ course.id }}" {% if assignment.course_id == course.id %}selected{% endif %}>{{ course.name }}</option>
