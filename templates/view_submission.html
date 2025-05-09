@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}جزئیات ارسال تکلیف{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">جزئیات ارسال تکلیف</h1>
+
+<div class="card bg-secondary text-light mb-4">
+    <div class="card-header">اطلاعات سابمیشن</div>
+    <div class="card-body">
+        <p><strong>عنوان تکلیف:</strong> {{ submission.defined_assignment.title }}</p>
+        <p><strong>درس:</strong> {{ submission.defined_assignment.course.name if submission.defined_assignment.course else '-' }}</p> {# نمایش نام درس #}
+        <p><strong>تاریخ ارسال:</strong> {{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p><strong>نام فایل:</strong> {{ submission.filename }}</p>
+
+        <h5 class="mt-4">نمره:</h5>
+        <p>{{ submission.grade if submission.grade else 'هنوز نمره‌دهی نشده' }}</p> {# نمایش نمره #}
+
+        <h5 class="mt-4">بازخورد استاد:</h5>
+        <p>{{ submission.feedback if submission.feedback else 'هنوز بازخوردی ثبت نشده' }}</p> {# نمایش بازخورد #}
+
+        <h5 class="mt-4">عملیات:</h5>
+        <a href="{{ url_for('download_file', filename=submission.filename) }}" class="btn btn-success">دانلود فایل</a>
+
+        <p class="mt-4"><a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">بازگشت به داشبورد</a></p>
+    </div>
+</div>
+
+{% endblock %}

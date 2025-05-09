@@ -5,6 +5,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from flask_migrate import Migrate
 
 # تنظیمات برنامه Flask
 app = Flask(__name__)
@@ -14,6 +15,7 @@ app.config['UPLOAD_FOLDER'] = 'uploads' # پوشه آپلود فایل‌ها
 app.config['ALLOWED_EXTENSIONS'] = {'pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip'} # فرمت‌های مجاز برای آپلود
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login' # صفحه‌ای که کاربر در صورت عدم احراز هویت به آن هدایت می‌شود
@@ -29,6 +31,9 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     role = db.Column(db.String(20), nullable=False) # 'دانشجو' یا 'استاد'
 
+    # رابطه با درس‌هایی که استاد تدریس می‌کند
+    taught_courses = db.relationship('Course', backref='teacher', lazy=True)
+
     # رابطه با تکالیف تعریف شده (برای استاد)
     defined_assignments = db.relationship('DefinedAssignment', backref='teacher', lazy=True)
 
@@ -38,27 +43,41 @@ class User(db.Model, UserMixin):
     def __repr__(self):
         return f"User('{self.email}', '{self.role}')"
 
+# مدل درس
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # رابطه با تکالیف مربوط به این درس
+    assignments = db.relationship('DefinedAssignment', backref='course', lazy=True, cascade="all, delete-orphan")
+
+    def __repr__(self):
+        return f"Course('{self.name}')"
+
 # مدل تکلیف تعریف شده توسط استاد
 class DefinedAssignment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=True)
-    course = db.Column(db.String(100), nullable=True)
     created_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     deadline = db.Column(db.DateTime, nullable=True) # مهلت ارسال
     teacher_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False) # ارتباط با مدل درس
 
     # رابطه با فایل‌های ارسالی دانشجویان برای این تکلیف
-    submissions = db.relationship('Submission', backref='defined_assignment', lazy=True)
+    submissions = db.relationship('Submission', backref='defined_assignment', lazy=True, cascade="all, delete-orphan")
 
     def __repr__(self):
-        return f"DefinedAssignment('{self.title}', '{self.course}')"
+        return f"DefinedAssignment('{self.title}', '{self.course.name if self.course else 'N/A'}')"
 
 # مدل ارسال تکلیف توسط دانشجو
 class Submission(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(150), nullable=False)
     upload_date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    grade = db.Column(db.String(10), nullable=True) # فیلد نمره (می‌تواند رشته برای Pass/Fail یا عدد باشد)
+    feedback = db.Column(db.Text, nullable=True) # فیلد بازخورد استاد
     student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     defined_assignment_id = db.Column(db.Integer, db.ForeignKey('defined_assignment.id'), nullable=False)
 
@@ -159,11 +178,15 @@ def student_dashboard():
     # ایجاد دیکشنری برای دسترسی آسان به سابمیشن‌های دانشجو بر اساس ID تکلیف
     # این کمک می‌کند تا در تمپلیت مشخص کنیم آیا دانشجو برای تکلیفی فایل ارسال کرده یا خیر
     submitted_assignment_ids = {sub.defined_assignment_id for sub in student_submissions}
+    # ایجاد دیکشنری برای دسترسی به سابمیشن بر اساس ID تکلیف
+    submission_by_assignment = {sub.defined_assignment_id: sub for sub in student_submissions}
+
 
     return render_template('student_dashboard.html', 
                            defined_assignments=defined_assignments,
                            student_submissions=student_submissions,
                            submitted_assignment_ids=submitted_assignment_ids,
+                           submission_by_assignment=submission_by_assignment,
                            datetime=datetime)
 
 # مسیر داشبورد استاد
@@ -174,52 +197,152 @@ def teacher_dashboard():
         flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
         return redirect(url_for('index')) # هدایت به صفحه اصلی یا ورود
 
-    # دریافت تمام تکالیف تعریف شده توسط این استاد
+    # دریافت تمام درس‌های این استاد
+    teachers_courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    # دریافت تمام تکالیف تعریف شده توسط این استاد (برای نمایش در داشبورد کلی)
     teachers_defined_assignments = DefinedAssignment.query.filter_by(teacher_id=current_user.id).all()
 
-    # دریافت تمام سابمیشن‌ها
+    # دریافت تمام سabmissions
     all_submissions = Submission.query.all()
 
     return render_template('teacher_dashboard.html', 
-                           defined_assignments=teachers_defined_assignments,
-                           submissions=all_submissions,
+                           courses=teachers_courses,
+                           defined_assignments=teachers_defined_assignments, # ممکن است دیگر لازم نباشد همه تکالیف اینجا نمایش داده شوند
+                           submissions=all_submissions, # ممکن است دیگر لازم نباشد همه سابمیشن‌ها اینجا نمایش داده شوند
                            datetime=datetime)
 
-# مسیر ایجاد تکلیف جدید توسط استاد
+# مسیر مدیریت درس‌ها توسط استاد
+@app.route('/teacher/courses')
+@login_required
+def manage_courses():
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+    
+    teachers_courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    return render_template('manage_courses.html', courses=teachers_courses)
+
+# مسیر ایجاد درس جدید توسط استاد
+@app.route('/teacher/create_course', methods=['GET', 'POST'])
+@login_required
+def create_course():
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        course_name = request.form.get('name')
+        if not course_name:
+            flash('نام درس نمی‌تواند خالی باشد.', 'danger')
+            return redirect(url_for('manage_courses')) # یا رندر کردن مجدد فرم
+
+        new_course = Course(name=course_name, teacher_id=current_user.id)
+        db.session.add(new_course)
+        db.session.commit()
+        flash('درس جدید با موفقیت ایجاد شد.', 'success')
+        return redirect(url_for('manage_courses'))
+    
+    # در متد GET، فرم ایجاد درس نمایش داده می‌شود. این می‌تواند در تمپلیت manage_courses باشد.
+    return redirect(url_for('manage_courses'))
+
+# مسیر ویرایش درس توسط استاد
+@app.route('/teacher/edit_course/<int:course_id>', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_id):
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+
+    course = Course.query.get_or_404(course_id)
+
+    # اطمینان از اینکه استاد فعلی صاحب این درس است
+    if course.teacher_id != current_user.id:
+        flash('شما اجازه ویرایش این درس را ندارید.', 'danger')
+        return redirect(url_for('manage_courses'))
+
+    if request.method == 'POST':
+        course.name = request.form.get('name')
+        if not course.name:
+             flash('نام درس نمی‌تواند خالی باشد.', 'danger')
+             return render_template('edit_course.html', course=course) # رندر مجدد فرم با خطا
+
+        db.session.commit()
+        flash('درس با موفقیت ویرایش شد.', 'success')
+        return redirect(url_for('manage_courses'))
+
+    return render_template('edit_course.html', course=course)
+
+# مسیر حذف درس توسط استاد
+@app.route('/teacher/delete_course/<int:course_id>', methods=['POST'])
+@login_required
+def delete_course(course_id):
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+
+    course = Course.query.get_or_404(course_id)
+
+    # اطمینان از اینکه استاد فعلی صاحب این درس است
+    if course.teacher_id != current_user.id:
+        flash('شما اجازه حذف این درس را ندارید.', 'danger')
+        return redirect(url_for('manage_courses'))
+
+    try:
+        # به دلیل cascade در مدل Course، تکالیف و سابمیشن‌های مرتبط نیز حذف می‌شوند
+        db.session.delete(course)
+        db.session.commit()
+        flash('درس با موفقیت حذف شد.', 'success')
+    except Exception as e:
+        flash(f'خطا در حذف درس: {e}', 'danger')
+
+    return redirect(url_for('manage_courses'))
+
+
+# مسیر ایجاد تکلیف جدید توسط استاد (نیاز به انتخاب درس)
 @app.route('/teacher/create_assignment', methods=['GET', 'POST'])
 @login_required
 def create_assignment():
     if current_user.role != 'استاد':
         flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
         return redirect(url_for('index'))
+    
+    teachers_courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    if not teachers_courses:
+        flash('شما درسی برای تعریف تکلیف ندارید. ابتدا یک درس ایجاد کنید.', 'warning')
+        return redirect(url_for('manage_courses'))
 
     if request.method == 'POST':
         title = request.form.get('title')
         description = request.form.get('description')
-        course = request.form.get('course')
+        course_id = request.form.get('course_id')
         deadline_str = request.form.get('deadline')
+
+        # بررسی وجود درس انتخاب شده
+        course = Course.query.get(course_id)
+        if not course or course.teacher_id != current_user.id:
+            flash('درس انتخاب شده نامعتبر است.', 'danger')
+            return render_template('create_assignment.html', courses=teachers_courses)
 
         deadline = None
         if deadline_str:
             try:
-                # فرمت ورودی datetime-local از HTML: YYYY-MM-DDTHH:MM
                 deadline = datetime.strptime(deadline_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('فرمت تاریخ و زمان مهلت صحیح نیست.', 'danger')
-                return redirect(url_for('teacher_dashboard')) # یا رندر کردن مجدد فرم با خطا
+                return render_template('create_assignment.html', courses=teachers_courses)
 
 
-        new_defined_assignment = DefinedAssignment(title=title, description=description, course=course, deadline=deadline, teacher_id=current_user.id)
+        new_defined_assignment = DefinedAssignment(title=title, description=description, course_id=course.id, deadline=deadline, teacher_id=current_user.id)
         db.session.add(new_defined_assignment)
         db.session.commit()
         flash('تکلیف جدید با موفقیت ایجاد شد.', 'success')
-        return redirect(url_for('teacher_dashboard'))
+        return redirect(url_for('teacher_dashboard')) # یا هدایت به صفحه مدیریت تکالیف یک درس
 
-    # در متد GET، فرم ایجاد تکلیف نمایش داده می‌شود. این باید در تمپلیت استاد باشد.
-    # این مسیر برای نمایش فرم به تنهایی نیست و فقط برای پردازش POST استفاده می‌شود.
-    return redirect(url_for('teacher_dashboard'))
+    # در متد GET، فرم ایجاد تکلیف نمایش داده می‌شود
+    return render_template('create_assignment.html', courses=teachers_courses)
 
-# مسیر ویرایش تکلیف توسط استاد
+
+# مسیر ویرایش تکلیف توسط استاد (نیاز به انتخاب درس)
 @app.route('/teacher/edit_assignment/<int:assignment_id>', methods=['GET', 'POST'])
 @login_required
 def edit_assignment(assignment_id):
@@ -233,12 +356,26 @@ def edit_assignment(assignment_id):
     if defined_assignment.teacher_id != current_user.id:
          flash('شما اجازه ویرایش این تکلیف را ندارید.', 'danger')
          return redirect(url_for('teacher_dashboard'))
+    
+    teachers_courses = Course.query.filter_by(teacher_id=current_user.id).all()
+    if not teachers_courses:
+        flash('شما درسی برای ویرایش تکلیف ندارید. ابتدا یک درس ایجاد کنید.', 'warning')
+        return redirect(url_for('manage_courses')) # یا هدایت به داشبورد استاد
+
 
     if request.method == 'POST':
         defined_assignment.title = request.form.get('title')
         defined_assignment.description = request.form.get('description')
-        defined_assignment.course = request.form.get('course')
+        course_id = request.form.get('course_id')
         deadline_str = request.form.get('deadline')
+
+        # بررسی وجود درس انتخاب شده
+        course = Course.query.get(course_id)
+        if not course or course.teacher_id != current_user.id:
+            flash('درس انتخاب شده نامعتبر است.', 'danger')
+            return render_template('edit_assignment.html', assignment=defined_assignment, courses=teachers_courses)
+
+        defined_assignment.course_id = course.id
 
         deadline = None
         if deadline_str:
@@ -246,16 +383,41 @@ def edit_assignment(assignment_id):
                 defined_assignment.deadline = datetime.strptime(deadline_str, '%Y-%m-%dT%H:%M')
             except ValueError:
                 flash('فرمت تاریخ و زمان مهلت صحیح نیست.', 'danger')
-                return render_template('edit_assignment.html', assignment=defined_assignment) # رندر مجدد فرم با خطا
+                return render_template('edit_assignment.html', assignment=defined_assignment, courses=teachers_courses) # رندر مجدد فرم با خطا
         else:
              defined_assignment.deadline = None # اگر فیلد خالی ارسال شود مهلت حذف می‌شود
 
         db.session.commit()
         flash('تکلیف با موفقیت ویرایش شد.', 'success')
-        return redirect(url_for('teacher_dashboard'))
+        return redirect(url_for('teacher_dashboard')) # یا هدایت به صفحه جزئیات تکلیف یا داشبورد استاد
 
     # در متد GET، فرم ویرایش نمایش داده می‌شود
-    return render_template('edit_assignment.html', assignment=defined_assignment)
+    return render_template('edit_assignment.html', assignment=defined_assignment, courses=teachers_courses)
+
+# مسیر حذف تکلیف توسط استاد
+@app.route('/teacher/delete_assignment/<int:assignment_id>', methods=['POST'])
+@login_required
+def delete_assignment(assignment_id):
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+
+    defined_assignment = DefinedAssignment.query.get_or_404(assignment_id)
+
+    # اطمینان از اینکه استاد فعلی سازنده این تکلیف است
+    if defined_assignment.teacher_id != current_user.id:
+         flash('شما اجازه حذف این تکلیف را ندارید.', 'danger')
+         return redirect(url_for('teacher_dashboard'))
+
+    try:
+        # حذف سابمیشن‌های مرتبط با این تکلیف نیز به دلیل cascade در مدل
+        db.session.delete(defined_assignment)
+        db.session.commit()
+        flash('تکلیف با موفقیت حذف شد.', 'success')
+    except Exception as e:
+        flash(f'خطا در حذف تکلیف: {e}', 'danger')
+
+    return redirect(url_for('teacher_dashboard'))
 
 
 # مسیر نمایش سابمیشن‌های یک تکلیف خاص (برای استاد)
@@ -280,104 +442,122 @@ def assignment_submissions(assignment_id):
                            defined_assignment=defined_assignment,
                            submissions=submissions)
 
-# مسیر آپلود تکلیف توسط دانشجو
-@app.route('/upload', methods=['POST'])
+# مسیر نمره‌دهی به سابمیشن توسط استاد
+@app.route('/teacher/grade_submission/<int:submission_id>', methods=['GET', 'POST'])
+@login_required
+def grade_submission(submission_id):
+    if current_user.role != 'استاد':
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('index'))
+
+    submission = Submission.query.get_or_404(submission_id)
+    
+    # اطمینان از اینکه استاد فعلی صاحب تکلیفی است که این سابمیشن برای آن ارسال شده
+    if submission.defined_assignment.teacher_id != current_user.id:
+        flash('شما اجازه نمره‌دهی به این سابمیشن را ندارید.', 'danger')
+        return redirect(url_for('teacher_dashboard')) # یا ریدایرکت به صفحه سابمیشن‌های همان تکلیف
+
+    if request.method == 'POST':
+        grade = request.form.get('grade')
+        feedback = request.form.get('feedback')
+
+        submission.grade = grade
+        submission.feedback = feedback
+        db.session.commit()
+
+        flash('نمره و بازخورد با موفقیت ثبت شد.', 'success')
+        # ریدایرکت به صفحه سابمیشن‌های همان تکلیف
+        return redirect(url_for('assignment_submissions', assignment_id=submission.defined_assignment.id))
+
+    # در متد GET، فرم نمره‌دهی نمایش داده می‌شود
+    return render_template('grade_submission.html', submission=submission)
+
+@app.route('/student/upload_assignment', methods=['POST'])
 @login_required
 def upload_assignment():
     if current_user.role != 'دانشجو':
         flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
         return redirect(url_for('index'))
 
-    # شناسه تکلیف تعریف شده که دانشجو برای آن فایل ارسال می‌کند
-    defined_assignment_id = request.form.get('defined_assignment_id')
-    if not defined_assignment_id:
-         flash('شناسه تکلیف مشخص نشده است.', 'danger')
-         return redirect(url_for('student_dashboard'))
-
-    defined_assignment = DefinedAssignment.query.get(defined_assignment_id)
-    if not defined_assignment:
-         flash('تکلیف مشخص شده وجود ندارد.', 'danger')
-         return redirect(url_for('student_dashboard'))
-
-    # !!! بررسی مهلت ارسال تکلیف !!!
-    if defined_assignment.deadline and datetime.utcnow() > defined_assignment.deadline:
-        flash('مهلت ارسال این تکلیف به پایان رسیده است.', 'danger')
-        return redirect(url_for('student_dashboard'))
-
-    # بررسی وجود فایل در درخواست
     if 'assignment_file' not in request.files:
-        flash('فایلی برای آپلود انتخاب نشده است.', 'danger')
+        flash('فایلی برای آپلود انتخاب نشده است.', 'warning')
         return redirect(url_for('student_dashboard'))
 
     file = request.files['assignment_file']
+    defined_assignment_id = request.form.get('defined_assignment_id')
 
-    # اگر کاربر فایلی انتخاب نکرده و فیلد خالی باشد
-    if file.filename == '':
-        flash('فایلی انتخاب نشده است.', 'danger')
+    if not file.filename:
+        flash('فایل انتخاب شده نامعتبر است.', 'warning')
         return redirect(url_for('student_dashboard'))
 
-    # اگر فایل انتخاب شده و فرمت آن مجاز باشد
-    if file and allowed_file(file.filename):
+    if file and allowed_file(file.filename) and defined_assignment_id:
+        # Check if assignment exists and is still open for submission (optional but recommended)
+        defined_assignment = DefinedAssignment.query.get(defined_assignment_id)
+        if not defined_assignment:
+            flash('تکلیف مورد نظر یافت نشد.', 'danger')
+            return redirect(url_for('student_dashboard'))
+
+        # Check if deadline has passed (optional but recommended)
+        if defined_assignment.deadline and datetime.utcnow() > defined_assignment.deadline:
+            flash('مهلت ارسال این تکلیف به پایان رسیده است.', 'danger')
+            return redirect(url_for('student_dashboard'))
+            
+        # Prevent multiple submissions for the same assignment by the same student (optional)
+        existing_submission = Submission.query.filter_by(student_id=current_user.id, defined_assignment_id=defined_assignment_id).first()
+        if existing_submission:
+            flash('شما قبلاً برای این تکلیف فایلی ارسال کرده‌اید.', 'warning')
+            return redirect(url_for('student_dashboard'))
+
         filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
 
-        # اطمینان از یونیک بودن نام فایل یا استفاده از روش دیگر برای جلوگیری از تداخل
-        # در حال حاضر فرض می‌کنیم نام فایل کافی است.
-        # می‌توانید از uuid یا ترکیب user_id و assignment_id استفاده کنید.
+        new_submission = Submission(filename=filename, student_id=current_user.id, defined_assignment_id=defined_assignment_id)
+        db.session.add(new_submission)
+        db.session.commit()
 
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-        # اگر فایلی با همین نام از قبل وجود دارد (ممکن است باعث مشکل شود) - نیاز به مدیریت بهتر نام فایل
-        # برای سادگی در حال حاضر نادیده گرفته می‌شود، اما در پروژه واقعی باید مدیریت شود.
-
-        try:
-            file.save(file_path)
-
-            # ذخیره اطلاعات در دیتابیس Submission
-            new_submission = Submission(filename=filename, 
-                                        student_id=current_user.id, 
-                                        defined_assignment_id=defined_assignment.id)
-            db.session.add(new_submission)
-            db.session.commit()
-
-            flash('تکلیف با موفقیت آپلود شد.', 'success')
-            return redirect(url_for('student_dashboard'))
-        except Exception as e:
-            # مدیریت خطای ذخیره فایل
-            flash(f'خطا در ذخیره فایل: {e}', 'danger')
-            return redirect(url_for('student_dashboard'))
-    else:
-        flash('فرمت فایل مجاز نیست.', 'danger')
+        flash('تکلیف با موفقیت آپلود شد.', 'success')
         return redirect(url_for('student_dashboard'))
+    else:
+        flash('فرمت فایل مجاز نیست یا مشکلی در ارسال وجود دارد.', 'danger')
 
+    return redirect(url_for('student_dashboard'))
 
-# مسیر دانلود فایل برای استاد
-@app.route('/download/<filename>')
+# مسیر نمایش جزئیات یک submission (برای استاد و دانشجو)
+@app.route('/submission/<int:submission_id>')
 @login_required
-def download_file(filename):
-    if current_user.role != 'استاد':
+def view_submission(submission_id):
+    submission = Submission.query.get_or_404(submission_id)
+
+    # اطمینان از اینکه کاربر فعلی یا استاد مربوطه می‌تواند این سابمیشن را ببیند
+    if current_user.role == 'دانشجو' and submission.student_id != current_user.id:
         flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
-        return redirect(url_for('index'))
+        return redirect(url_for('student_dashboard')) # یا صفحه اصلی دانشجو
 
-    # اختیاری: بررسی کنید که آیا فایل مربوط به یک سابمیشن معتبر است یا خیر
-    # submission = Submission.query.filter_by(filename=filename).first()
-    # if not submission:
-    #     flash('فایل مورد نظر یافت نشد یا مرتبط با سابمیشن معتبری نیست.', 'danger')
-    #     return redirect(url_for('teacher_dashboard'))
+    if current_user.role == 'استاد' and submission.defined_assignment.teacher_id != current_user.id:
+        flash('شما اجازه دسترسی به این صفحه را ندارید.', 'danger')
+        return redirect(url_for('teacher_dashboard')) # یا صفحه اصلی استاد
 
+    return render_template('view_submission.html', submission=submission)
+
+
+# مسیر دانلود فایل سابمیشن
+@app.route('/uploads/<filename>')
+@login_required # شاید نیاز به بررسی بیشتر دسترسی باشد که فقط استاد مربوطه یا دانشجو صاحب سابمیشن بتواند دانلود کند
+def uploaded_file(filename):
+    # یک لایه امنیتی اضافه کنید: اطمینان حاصل کنید که کاربر فعلی مجاز به دانلود این فایل است
+    # مثلاً اگر دانشجو است، باید صاحب سابمیشنی باشد که این فایل به آن مرتبط است.
+    # اگر استاد است، باید صاحب تکلیفی باشد که سابمیشن مربوط به آن است.
+    # فعلاً به سادگی اجازه دانلود برای کاربران لاگین شده داده می‌شود.
+    # پیاده‌سازی دقیق‌تر بررسی دسترسی به عهده شماست.
     try:
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except FileNotFoundError:
-        flash('فایل مورد نظر یافت نشد.', 'danger')
-        return redirect(url_for('teacher_dashboard'))
+        abort(404)
 
-# ایجاد جداول پایگاه داده در صورت عدم وجود (پس از تعریف مدل‌های جدید)
-# توجه: اگر قبلاً جداول را ایجاد کرده‌اید، ممکن است نیاز به حذف فایل site.db و اجرای مجدد داشته باشید
-# یا از Flask-Migrate برای مدیریت تغییرات دیتابیس استفاده کنید.
-with app.app_context():
-    db.create_all()
-
+# اضافه کردن دستور اجرا در صورت اجرای مستقیم فایل
 if __name__ == '__main__':
-    # اطمینان از وجود پوشه آپلود
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
+    # قبل از اجرای برنامه، جدول‌ها را ایجاد کنید (اگر از Flask-Migrate استفاده نمی‌کنید)
+    # با استفاده از Flask-Migrate، دستور flask db upgrade این کار را انجام می‌دهد.
+    # db.create_all()
     app.run(debug=True)

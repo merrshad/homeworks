@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}نمره‌دهی به تکلیف{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">نمره‌دهی به تکلیف</h1>
+
+<div class="card bg-secondary text-light mb-4">
+    <div class="card-header">اطلاعات سابمیشن</div>
+    <div class="card-body">
+        <p><strong>عنوان تکلیف:</strong> {{ submission.defined_assignment.title }}</p>
+        <p><strong>درس:</strong> {{ submission.defined_assignment.course.name if submission.defined_assignment.course else '-' }}</p>
+        <p><strong>دانشجو:</strong> {{ submission.student.first_name }} {{ submission.student.last_name }}</p>
+        <p><strong>تاریخ ارسال:</strong> {{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</p>
+        <p><strong>نام فایل:</strong> {{ submission.filename }}</p>
+        <p><a href="{{ url_for('uploaded_file', filename=submission.filename) }}" class="btn btn-sm btn-success">دانلود فایل</a></p>
+    </div>
+</div>
+
+<h2 class="mt-5">ثبت نمره و بازخورد</h2>
+<div class="card bg-secondary text-light mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('grade_submission', submission_id=submission.id) }}">
+            <div class="mb-3">
+                <label for="grade" class="form-label">نمره:</label>
+                <input type="text" class="form-control form-control-dark" id="grade" name="grade" value="{{ submission.grade if submission.grade else '' }}">
+            </div>
+            <div class="mb-3">
+                <label for="feedback" class="form-label">بازخورد:</label>
+                <textarea class="form-control form-control-dark" id="feedback" name="feedback" rows="4">{{ submission.feedback if submission.feedback else '' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">ثبت نمره و بازخورد</button>
+             <a href="{{ url_for('assignment_submissions', assignment_id=submission.defined_assignment.id) }}" class="btn btn-secondary">انصراف</a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

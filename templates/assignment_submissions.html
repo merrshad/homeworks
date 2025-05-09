@@ -9,10 +9,10 @@
     <div class="card-header">جزئیات تکلیف</div>
     <div class="card-body">
         <p><strong>عنوان:</strong> {{ defined_assignment.title }}</p>
-        <p><strong>درس:</strong> {{ defined_assignment.course }}</p>
+        <p><strong>درس:</strong> {{ defined_assignment.course.name if defined_assignment.course else '-' }}</p> {# استفاده از defined_assignment.course.name #}
         <p><strong>تاریخ تعریف:</strong> {{ defined_assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</p>
         <p><strong>توضیحات:</strong> {{ defined_assignment.description if defined_assignment.description else '-' }}</p>
-        <p><a href="{{ url_for('teacher_dashboard') }}" class="btn btn-sm btn-secondary">بازگشت به داشبورد استاد</a></p>
+        <p><a href="{{ url_for('teacher_dashboard') }}#assignments" class="btn btn-sm btn-secondary">بازگشت به لیست تکالیف</a></p>
     </div>
 </div>
 
@@ -25,7 +25,10 @@
                 <th scope="col">دانشجو</th>
                 <th scope="col">تاریخ ارسال</th>
                 <th scope="col">فایل</th>
+                <th scope="col">نمره</th> {# اضافه شدن ستون نمره #}
+                <th scope="col">بازخورد</th> {# اضافه شدن ستون بازخورد #}
                 <th scope="col">عملیات</th>
+                <th scope="col">نمره‌دهی</th> {# اضافه شدن ستون برای اقدام نمره‌دهی #}
             </tr>
         </thead>
         <tbody>
@@ -34,8 +37,13 @@
                 <td>{{ submission.student.first_name }} {{ submission.student.last_name }}</td>
                 <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>{{ submission.filename }}</td>
+                <td>{{ submission.grade if submission.grade else '-' }}</td> {# نمایش نمره #}
+                <td>{{ submission.feedback if submission.feedback else '-' }}</td> {# نمایش بازخورد #}
                 <td>
-                    <a href="{{ url_for('download_file', filename=submission.filename) }}" class="btn btn-sm btn-success">دانلود</a>
+                    <a href="{{ url_for('uploaded_file', filename=submission.filename) }}" class="btn btn-sm btn-success">دانلود فایل</a>
+                </td>
+                 <td>
+                    <a href="{{ url_for('grade_submission', submission_id=submission.id) }}" class="btn btn-sm btn-primary">نمره‌دهی/بازخورد</a> {# لینک به صفحه نمره‌دهی #}
                 </td>
             </tr>
             {% endfor %}

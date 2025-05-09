@@ -6,7 +6,12 @@
 <h1 class="text-center mb-4">داشبورد استاد</h1>
 <p class="text-center">خوش آمدید، استاد {{ current_user.last_name }} عزیز!</p>
 
+<div class="text-center mb-4">
+    <a href="{{ url_for('manage_courses') }}" class="btn btn-info text-dark">مدیریت درس‌ها</a>
+</div>
+
 <h2 class="mt-5">تعریف تکلیف جدید</h2>
+{% if courses %}
 <div class="card bg-secondary text-light mb-4">
     <div class="card-body">
         <form method="POST" action="{{ url_for('create_assignment') }}">
@@ -15,8 +20,12 @@
                 <input type="text" class="form-control form-control-dark" id="title" name="title" required>
             </div>
             <div class="mb-3">
-                <label for="course" class="form-label">درس:</label>
-                <input type="text" class="form-control form-control-dark" id="course" name="course">
+                <label for="course_id" class="form-label">درس:</label>
+                <select class="form-select form-select-dark" id="course_id" name="course_id" required>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="mb-3">
                 <label for="description" class="form-label">توضیحات:</label>
@@ -30,8 +39,14 @@
         </form>
     </div>
 </div>
+{% else %}
+ <div class="alert alert-warning text-center" role="alert">
+        برای تعریف تکلیف، ابتدا باید حداقل یک درس ایجاد کنید. به صفحه <a href="{{ url_for('manage_courses') }}" class="alert-link text-dark">مدیریت درس‌ها</a> بروید.
+    </div>
+{% endif %}
 
-<h2 class="mt-5">تکالیف تعریف شده شما</h2>
+
+<h2 class="mt-5" id="assignments">تکالیف تعریف شده شما</h2> {# اضافه شدن id برای لینک از صفحه مدیریت درس #}
 {% if defined_assignments %}
     <div class="table-responsive">
     <table class="table table-dark table-striped">
@@ -42,13 +57,14 @@
                 <th scope="col">تاریخ تعریف</th>
                 <th scope="col">مهلت ارسال</th>
                 <th scope="col">عملیات</th>
+                <th scope="col">حذف</th>
             </tr>
         </thead>
         <tbody>
             {% for assignment in defined_assignments %}
             <tr>
                 <td><a href="{{ url_for('assignment_submissions', assignment_id=assignment.id) }}" class="text-light">{{ assignment.title }}</a></td>
-                <td>{{ assignment.course }}</td>
+                <td>{{ assignment.course.name if assignment.course else '-' }}</td> {# استفاده از assignment.course.name #}
                 <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>
                     {% if assignment.deadline %}
@@ -60,6 +76,11 @@
                  <td>
                     <a href="{{ url_for('edit_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
                 </td>
+                <td>
+                    <form action="{{ url_for('delete_assignment', assignment_id=assignment.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این تکلیف مطمئن هستید؟ تمام فایل‌های ارسالی مربوط به این تکلیف نیز حذف خواهند شد.');">
+                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
@@ -69,37 +90,7 @@
     <p>شما هنوز تکلیفی تعریف نکرده‌اید.</p>
 {% endif %}
 
-<h2 class="mt-5">سابمیشن‌های دانشجویان</h2>
-{% if submissions %}
-     <div class="table-responsive">
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th scope="col">تکلیف</th>
-                <th scope="col">دانشجو</th>
-                <th scope="col">تاریخ ارسال</th>
-                <th scope="col">فایل</th>
-                <th scope="col">عملیات</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for submission in submissions %}
-            <tr>
-                <td>{{ submission.defined_assignment.title }}</td>
-                <td>{{ submission.student.first_name }} {{ submission.student.last_name }}</td>
-                <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>{{ submission.filename }}</td>
-                <td>
-                    <a href="{{ url_for('download_file', filename=submission.filename) }}" class="btn btn-sm btn-success">دانلود</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-     </div>
-{% else %}
-     <p>هیچ فایلی توسط دانشجویان ارسال نشده است.</p>
-{% endif %}
+{# بخش نمایش تمام سابمیشن‌ها حذف شده است #}
 
 <p class="text-center mt-4"><a href="{{ url_for('logout') }}" class="btn btn-danger">خروج</a></p>
 {% endblock %}

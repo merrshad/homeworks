@@ -25,7 +25,7 @@
             {% for assignment in defined_assignments %}
             <tr>
                 <td>{{ assignment.title }}</td>
-                <td>{{ assignment.course }}</td>
+                <td>{{ assignment.course.name if assignment.course else '-' }}</td> {# نمایش نام درس #}
                 <td>{{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}</td>
                 <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>
@@ -104,6 +104,9 @@
                 <th scope="col">عنوان تکلیف</th>
                 <th scope="col">تاریخ ارسال</th>
                 <th scope="col">فایل</th>
+                <th scope="col">نمره</th> {# اضافه شدن ستون نمره #}
+                <th scope="col">بازخورد</th> {# اضافه شدن ستون بازخورد #}
+                 <th scope="col">عملیات</th> {# اضافه شدن ستون عملیات #}
             </tr>
         </thead>
         <tbody>
@@ -112,6 +115,11 @@
                 <td>{{ submission.defined_assignment.title }}</td>
                 <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
                 <td>{{ submission.filename }}</td>
+                <td>{{ submission.grade if submission.grade else '-' }}</td> {# نمایش نمره #}
+                <td>{{ submission.feedback if submission.feedback else '-' }}</td> {# نمایش بازخورد #}
+                 <td>
+                    <a href="{{ url_for('view_submission', submission_id=submission.id) }}" class="btn btn-sm btn-info text-dark">مشاهده جزئیات</a> {# لینک مشاهده جزئیات #}
+                </td>
             </tr>
             {% endfor %}
         </tbody>

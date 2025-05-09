@@ -13,8 +13,12 @@
                 <input type="text" class="form-control form-control-dark" id="title" name="title" value="{{ assignment.title }}" required>
             </div>
             <div class="mb-3">
-                <label for="course" class="form-label">درس:</label>
-                <input type="text" class="form-control form-control-dark" id="course" name="course" value="{{ assignment.course if assignment.course else '' }}">
+                <label for="course_id" class="form-label">درس:</label>
+                <select class="form-select form-select-dark" id="course_id" name="course_id" required>
+                    {% for course in courses %}
+                        <option value="{{ course.id }}" {% if assignment.course_id == course.id %}selected{% endif %}>{{ course.name }}</option>
+                    {% endfor %}
+                </select>
             </div>
             <div class="mb-3">
                 <label for="description" class="form-label">توضیحات:</label>
