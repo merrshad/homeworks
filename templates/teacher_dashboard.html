@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}داشبورد استاد{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">داشبورد استاد</h1>
+<p class="text-center">خوش آمدید، استاد {{ current_user.last_name }} عزیز!</p>
+
+<h2 class="mt-5">تعریف تکلیف جدید</h2>
+<div class="card bg-secondary text-light mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('create_assignment') }}">
+            <div class="mb-3">
+                <label for="title" class="form-label">عنوان تکلیف:</label>
+                <input type="text" class="form-control form-control-dark" id="title" name="title" required>
+            </div>
+            <div class="mb-3">
+                <label for="course" class="form-label">درس:</label>
+                <input type="text" class="form-control form-control-dark" id="course" name="course">
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">توضیحات:</label>
+                <textarea class="form-control form-control-dark" id="description" name="description" rows="3"></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="deadline" class="form-label">مهلت ارسال:</label>
+                <input type="datetime-local" class="form-control form-control-dark" id="deadline" name="deadline">
+            </div>
+            <button type="submit" class="btn btn-primary">ایجاد تکلیف</button>
+        </form>
+    </div>
+</div>
+
+<h2 class="mt-5">تکالیف تعریف شده شما</h2>
+{% if defined_assignments %}
+    <div class="table-responsive">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th scope="col">عنوان</th>
+                <th scope="col">درس</th>
+                <th scope="col">تاریخ تعریف</th>
+                <th scope="col">مهلت ارسال</th>
+                <th scope="col">عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in defined_assignments %}
+            <tr>
+                <td><a href="{{ url_for('assignment_submissions', assignment_id=assignment.id) }}" class="text-light">{{ assignment.title }}</a></td>
+                <td>{{ assignment.course }}</td>
+                <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    {% if assignment.deadline %}
+                        {{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}
+                    {% else %}
+                        نامحدود
+                    {% endif %}
+                </td>
+                 <td>
+                    <a href="{{ url_for('edit_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% else %}
+    <p>شما هنوز تکلیفی تعریف نکرده‌اید.</p>
+{% endif %}
+
+<h2 class="mt-5">سابمیشن‌های دانشجویان</h2>
+{% if submissions %}
+     <div class="table-responsive">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th scope="col">تکلیف</th>
+                <th scope="col">دانشجو</th>
+                <th scope="col">تاریخ ارسال</th>
+                <th scope="col">فایل</th>
+                <th scope="col">عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+            <tr>
+                <td>{{ submission.defined_assignment.title }}</td>
+                <td>{{ submission.student.first_name }} {{ submission.student.last_name }}</td>
+                <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ submission.filename }}</td>
+                <td>
+                    <a href="{{ url_for('download_file', filename=submission.filename) }}" class="btn btn-sm btn-success">دانلود</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+     </div>
+{% else %}
+     <p>هیچ فایلی توسط دانشجویان ارسال نشده است.</p>
+{% endif %}
+
+<p class="text-center mt-4"><a href="{{ url_for('logout') }}" class="btn btn-danger">خروج</a></p>
+{% endblock %}

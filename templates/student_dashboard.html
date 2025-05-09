@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}داشبورد دانشجو{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">داشبورد دانشجو</h1>
+<p class="text-center">خوش آمدید، {{ current_user.first_name }} {{ current_user.last_name }} عزیز!</p>
+
+<h2 class="mt-5">تکالیف تعریف شده</h2>
+{% if defined_assignments %}
+    <div class="table-responsive">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th scope="col">عنوان</th>
+                <th scope="col">درس</th>
+                <th scope="col">استاد</th>
+                <th scope="col">تاریخ تعریف</th>
+                <th scope="col">مهلت ارسال</th>
+                <th scope="col">وضعیت ارسال</th>
+                <th scope="col">ارسال تکلیف</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assignment in defined_assignments %}
+            <tr>
+                <td>{{ assignment.title }}</td>
+                <td>{{ assignment.course }}</td>
+                <td>{{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}</td>
+                <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                    {% if assignment.deadline %}
+                        {{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}
+                        {% if datetime.utcnow() > assignment.deadline %}
+                            <span class="badge bg-danger">مهلت پایان یافته</span>
+                        {% else %}
+                            <span class="badge bg-info text-dark">مهلت باقی است</span>
+                        {% endif %}
+                    {% else %}
+                        نامحدود
+                    {% endif %}
+                </td>
+                <td>
+                    {% if assignment.id in submitted_assignment_ids %}
+                        <span class="badge bg-success">ارسال شده</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">منتظر ارسال</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set deadline_passed = assignment.deadline and datetime.utcnow() > assignment.deadline %}
+                    {% if assignment.id not in submitted_assignment_ids and not deadline_passed %}
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal{{ assignment.id }}">
+                            ارسال فایل
+                        </button>
+
+                        <!-- Modal برای آپلود فایل -->
+                        <div class="modal fade" id="uploadModal{{ assignment.id }}" tabindex="-1" aria-labelledby="uploadModalLabel{{ assignment.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content bg-secondary text-light">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="uploadModalLabel{{ assignment.id }}">ارسال تکلیف: {{ assignment.title }}</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form method="POST" action="{{ url_for('upload_assignment') }}" enctype="multipart/form-data">
+                                            <input type="hidden" name="defined_assignment_id" value="{{ assignment.id }}">
+                                            <div class="mb-3">
+                                                <label for="assignment_file{{ assignment.id }}" class="form-label">فایل تکلیف:</label>
+                                                <input type="file" class="form-control form-control-dark" id="assignment_file{{ assignment.id }}" name="assignment_file" required>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary w-100">آپلود</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    {% else %}
+                         <button type="button" class="btn btn-sm btn-secondary" disabled>
+                            {% if assignment.id in submitted_assignment_ids %}
+                                ارسال شده
+                            {% elif deadline_passed %}
+                                مهلت پایان یافته
+                            {% endif %}
+                        </button>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+{% else %}
+    <p>هیچ تکلیفی هنوز توسط استاد تعریف نشده است.</p>
+{% endif %}
+
+<h2 class="mt-5">سابمیشن‌های شما</h2>
+{% if student_submissions %}
+     <div class="table-responsive">
+    <table class="table table-dark table-striped">
+        <thead>
+            <tr>
+                <th scope="col">عنوان تکلیف</th>
+                <th scope="col">تاریخ ارسال</th>
+                <th scope="col">فایل</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in student_submissions %}
+            <tr>
+                <td>{{ submission.defined_assignment.title }}</td>
+                <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ submission.filename }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+     </div>
+{% else %}
+     <p>شما هنوز فایلی برای هیچ تکلیفی ارسال نکرده‌اید.</p>
+{% endif %}
+
+<p class="text-center mt-4"><a href="{{ url_for('logout') }}" class="btn btn-danger">خروج</a></p>
+{% endblock %}

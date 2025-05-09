@@ -1,0 +1,99 @@
+/* استایل‌های کلی برای Dark Mode و فونت وزیر */
+body {
+    background-color: #1a1a1a; /* رنگ پس‌زمینه تیره */
+    color: #f0f0f0; /* رنگ متن روشن */
+    font-family: 'Vazirmatn', sans-serif; /* استفاده از فونت وزیر */
+    direction: rtl; /* راست‌چین */
+    text-align: right; /* تراز متن راست */
+}
+
+/* تنظیمات کلی برای عناصر فرم در Dark Mode */
+.form-control-dark, .form-select-dark {
+    background-color: #333; /* پس‌زمینه تیره‌تر برای فیلدهای ورودی */
+    color: #f0f0f0; /* رنگ متن روشن */
+    border-color: #555; /* رنگ حاشیه */
+}
+
+.form-control-dark::placeholder {
+    color: #bbb; /* رنگ متن راهنما */
+}
+
+.form-control-dark:focus, .form-select-dark:focus {
+    background-color: #444; /* پس‌زمینه هنگام فوکوس */
+    color: #f0f0f0;
+    border-color: #777;
+    box-shadow: 0 0 0 0.25rem rgba(120, 120, 120, 0.25); /* سایه هنگام فوکوس */
+}
+
+/* استایل دکمه‌ها */
+.btn-primary {
+    background-color: #007bff; /* آبی */
+    border-color: #007bff;
+}
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.btn-success {
+    background-color: #28a745; /* سبز */
+    border-color: #28a745;
+}
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.btn-danger {
+    background-color: #dc3545; /* قرمز */
+    border-color: #dc3545;
+}
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+/* استایل کارت‌ها */
+.card.bg-secondary {
+    background-color: #333 !important; /* رنگ پس‌زمینه کارت در Dark Mode */
+    color: #f0f0f0;
+    border-color: #555;
+}
+
+.card-header {
+    border-bottom: 1px solid #555; /* خط جداکننده هدر کارت */
+}
+
+/* استایل جدول در Dark Mode */
+.table-dark {
+    --bs-table-bg: #333;
+    --bs-table-striped-bg: #444;
+    --bs-table-color: #f0f0f0;
+    --bs-table-border-color: #555;
+}
+
+.table-dark th, .table-dark td {
+     border-color: #555; /* رنگ حاشیه سلول‌های جدول */
+}
+
+/* استایل پیام‌های فلش */
+.alert-success {
+    background-color: #28a745; /* سبز */
+    color: #fff;
+    border-color: #28a745;
+}
+.alert-danger {
+    background-color: #dc3545; /* قرمز */
+    color: #fff;
+    border-color: #dc3545;
+}
+.alert-warning {
+    background-color: #ffc107; /* زرد */
+    color: #212529;
+    border-color: #ffc107;
+}
+.alert-info {
+    background-color: #17a2b8; /* آبی روشن */
+    color: #fff;
+    border-color: #17a2b8;
+}

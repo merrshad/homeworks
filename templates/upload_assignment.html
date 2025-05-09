@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}وضعیت آپلود{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card bg-secondary text-light">
+            <div class="card-header text-center">وضعیت آپلود</div>
+            <div class="card-body">
+                <p>تکلیف شما در حال پردازش است...</p>
+                <p><a href="{{ url_for('student_dashboard') }}" class="btn btn-primary mt-3">بازگشت به داشبورد</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

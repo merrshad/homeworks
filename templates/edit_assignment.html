@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}ویرایش تکلیف: {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">ویرایش تکلیف: {{ assignment.title }}</h1>
+
+<div class="card bg-secondary text-light mb-4">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('edit_assignment', assignment_id=assignment.id) }}">
+            <div class="mb-3">
+                <label for="title" class="form-label">عنوان تکلیف:</label>
+                <input type="text" class="form-control form-control-dark" id="title" name="title" value="{{ assignment.title }}" required>
+            </div>
+            <div class="mb-3">
+                <label for="course" class="form-label">درس:</label>
+                <input type="text" class="form-control form-control-dark" id="course" name="course" value="{{ assignment.course if assignment.course else '' }}">
+            </div>
+            <div class="mb-3">
+                <label for="description" class="form-label">توضیحات:</label>
+                <textarea class="form-control form-control-dark" id="description" name="description" rows="3">{{ assignment.description if assignment.description else '' }}</textarea>
+            </div>
+             <div class="mb-3">
+                <label for="deadline" class="form-label">مهلت ارسال:</label>
+                <input type="datetime-local" class="form-control form-control-dark" id="deadline" name="deadline" value="{{ assignment.deadline.strftime('%Y-%m-%dT%H:%M') if assignment.deadline else '' }}">
+            </div>
+            <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">انصراف</a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
