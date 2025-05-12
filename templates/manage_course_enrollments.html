@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}مدیریت ثبت‌نام در درس {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>مدیریت ثبت‌نام در درس {{ course.name }}</h2>
+        <a href="{{ url_for('manage_courses') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> بازگشت به لیست درس‌ها
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">دانشجویان ثبت‌نام شده</h3>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_students %}
+                        <div class="list-group">
+                            {% for enrollment in enrolled_students %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        {{ enrollment.student.first_name }} {{ enrollment.student.last_name }}
+                                        <small class="text-muted d-block">تاریخ ثبت‌نام: {{ enrollment.enrollment_date.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <form method="POST" class="d-inline">
+                                        <input type="hidden" name="student_id" value="{{ enrollment.student.id }}">
+                                        <input type="hidden" name="action" value="unenroll">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('آیا از حذف این دانشجو از درس اطمینان دارید؟')">
+                                            <i class="bi bi-person-dash"></i> حذف از درس
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            هیچ دانشجویی در این درس ثبت‌نام نکرده است.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">افزودن دانشجوی جدید</h3>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="student_id" class="form-label">انتخاب دانشجو</label>
+                            <select class="form-select" id="student_id" name="student_id" required>
+                                <option value="">انتخاب کنید...</option>
+                                {% for student in all_students %}
+                                    {% if student.id not in enrolled_student_ids %}
+                                        <option value="{{ student.id }}">
+                                            {{ student.first_name }} {{ student.last_name }}
+                                        </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <input type="hidden" name="action" value="enroll">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> افزودن به درس
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

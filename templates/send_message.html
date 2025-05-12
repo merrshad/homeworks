@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}ارسال پیام جدید{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">ارسال پیام جدید</h2>
+
+    <form method="POST" action="{{ url_for('send_message') }}">
+        <div class="mb-3">
+            <label for="receiver_id" class="form-label">گیرنده</label>
+            <select class="form-select" id="receiver_id" name="receiver_id" required>
+                <option value="">انتخاب گیرنده...</option>
+                {% for user in users %}
+                    <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }} ({{ user.role }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="content" class="form-label">متن پیام</label>
+            <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+        </div>
+
+        <div class="mb-3">
+            <label for="assignment_id" class="form-label">تکلیف مرتبط (اختیاری)</label>
+            <select class="form-select" id="assignment_id" name="assignment_id">
+                <option value="">بدون تکلیف مرتبط</option>
+                {% for assignment in assignments %}
+                    <option value="{{ assignment.id }}">{{ assignment.title }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">ارسال پیام</button>
+            <a href="{{ url_for('messages') }}" class="btn btn-secondary">بازگشت</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}آمار و گزارش‌ها{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">آمار و گزارش‌ها</h2>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">تعداد کل درس‌ها</h5>
+                    <p class="card-text display-4">{{ total_courses }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">تعداد کل تکالیف</h5>
+                    <p class="card-text display-4">{{ total_assignments }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">تعداد کل ارسال‌ها</h5>
+                    <p class="card-text display-4">{{ total_submissions }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mb-3">آمار به تفکیک درس</h3>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>نام درس</th>
+                    <th>تعداد تکالیف</th>
+                    <th>تعداد ارسال‌ها</th>
+                    <th>میانگین نمرات</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in course_stats %}
+                    <tr>
+                        <td>{{ stat.course.name }}</td>
+                        <td>{{ stat.total_assignments }}</td>
+                        <td>{{ stat.total_submissions }}</td>
+                        <td>{{ "%.2f"|format(stat.average_grade) }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %} 

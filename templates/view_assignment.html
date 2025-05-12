@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">{{ assignment.title }}</h2>
+                            <p class="mb-0 opacity-75">{{ assignment.course.name }} - {{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}</p>
+                        </div>
+                        {% if current_user.role == 'teacher' %}
+                            <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-light">
+                                <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('student_dashboard') }}" class="btn btn-light">
+                                <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Details -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h3 class="card-title">توضیحات تکلیف</h3>
+                        <p class="card-text">{{ assignment.description or 'توضیحاتی برای این تکلیف ثبت نشده است.' }}</p>
+                    </div>
+
+                    {% if assignment.attachment_path %}
+                        <div class="mb-4">
+                            <h3 class="card-title">فایل پیوست</h3>
+                            <div class="alert alert-info border-0">
+                                <i class="bi bi-paperclip"></i> فایل پیوست برای این تکلیف موجود است.
+                                <a href="{{ url_for('download_assignment_attachment', assignment_id=assignment.id) }}" class="btn btn-primary btn-sm ms-2">
+                                    <i class="bi bi-download"></i> دانلود فایل پیوست
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-4">
+                        <h3 class="card-title">اطلاعات تکلیف</h3>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p class="mb-2">
+                                    <i class="bi bi-calendar"></i> تاریخ ایجاد:
+                                    <span class="text-muted">{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</span>
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                {% if assignment.deadline %}
+                                    <p class="mb-2">
+                                        <i class="bi bi-clock"></i> مهلت ارسال:
+                                        <span class="text-muted">{{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}</span>
+                                    </p>
+                                {% else %}
+                                    <p class="mb-2">
+                                        <i class="bi bi-clock"></i> مهلت ارسال:
+                                        <span class="text-muted">تعیین نشده</span>
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if current_user.role == 'student' %}
+                        <div class="mb-4">
+                            <h3 class="card-title">ارسال تکلیف</h3>
+                            {% if assignment.id in submitted_assignment_ids %}
+                                {% set submission = submission_by_assignment[assignment.id] %}
+                                <div class="alert alert-success border-0">
+                                    <i class="bi bi-check-circle"></i> تکلیف شما با موفقیت ارسال شده است.
+                                    <div class="mt-2">
+                                        <small>
+                                            تاریخ ارسال: {{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}
+                                            {% if submission.grade %}
+                                                <br>نمره: {{ submission.grade }}
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <form method="POST" action="{{ url_for('upload_assignment') }}" enctype="multipart/form-data">
+                                    <input type="hidden" name="defined_assignment_id" value="{{ assignment.id }}">
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" name="assignment_file" required>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="bi bi-upload"></i> ارسال تکلیف
+                                        </button>
+                                    </div>
+                                </form>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

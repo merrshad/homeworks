@@ -3,132 +3,187 @@
 {% block title %}داشبورد دانشجو{% endblock %}
 
 {% block content %}
-<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
-<h1 class="text-center mb-4">داشبورد دانشجو</h1>
-<p class="text-center">خوش آمدید، {{ current_user.first_name }} {{ current_user.last_name }} عزیز!</p>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">خوش آمدید، {{ current_user.first_name }} {{ current_user.last_name }}</h2>
+                            <p class="mb-0 opacity-75">به داشبورد دانشجویی خود خوش آمدید</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('available_courses') }}" class="btn btn-light">
+                                <i class="bi bi-book"></i> درس‌های قابل ثبت‌نام
+                            </a>
+                            <a href="{{ url_for('statistics') }}" class="btn btn-light">
+                                <i class="bi bi-graph-up"></i> آمار و گزارش‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<h2 class="mt-5">تکالیف تعریف شده</h2>
-{% if defined_assignments %}
-    <div class="table-responsive">
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th scope="col">عنوان</th>
-                <th scope="col">درس</th>
-                <th scope="col">استاد</th>
-                <th scope="col">تاریخ تعریف</th>
-                <th scope="col">مهلت ارسال</th>
-                <th scope="col">وضعیت ارسال</th>
-                <th scope="col">ارسال تکلیف</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assignment in defined_assignments %}
-            <tr>
-                <td>{{ assignment.title }}</td>
-                <td>{{ assignment.course.name if assignment.course else '-' }}</td> {# نمایش نام درس #}
-                <td>{{ assignment.teacher.first_name }} {{ assignment.teacher.last_name }}</td>
-                <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    {% if assignment.deadline %}
-                        {{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}
-                        {% if datetime.utcnow() > assignment.deadline %}
-                            <span class="badge bg-danger">مهلت پایان یافته</span>
-                        {% else %}
-                            <span class="badge bg-info text-dark">مهلت باقی است</span>
-                        {% endif %}
-                    {% else %}
-                        نامحدود
-                    {% endif %}
-                </td>
-                <td>
-                    {% if assignment.id in submitted_assignment_ids %}
-                        <span class="badge bg-success">ارسال شده</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">منتظر ارسال</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% set deadline_passed = assignment.deadline and datetime.utcnow() > assignment.deadline %}
-                    {% if assignment.id not in submitted_assignment_ids and not deadline_passed %}
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal{{ assignment.id }}">
-                            ارسال فایل
-                        </button>
+    <!-- Stats Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">درس‌های من</h6>
+                            <h2 class="mb-0">{{ defined_assignments|map(attribute='course')|unique|list|length }}</h2>
+                        </div>
+                        <i class="bi bi-book fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">تکالیف ارسال شده</h6>
+                            <h2 class="mb-0">{{ submitted_assignment_ids|length }}</h2>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">تکالیف در انتظار</h6>
+                            <h2 class="mb-0">{{ defined_assignments|length - submitted_assignment_ids|length }}</h2>
+                        </div>
+                        <i class="bi bi-clock fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-danger text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">مهلت نزدیک</h6>
+                            <h2 class="mb-0">
+                                {{ defined_assignments|selectattr('deadline')|selectattr('deadline', '>', datetime.utcnow())|list|length }}
+                            </h2>
+                        </div>
+                        <i class="bi bi-exclamation-circle fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <!-- Modal برای آپلود فایل -->
-                        <div class="modal fade" id="uploadModal{{ assignment.id }}" tabindex="-1" aria-labelledby="uploadModalLabel{{ assignment.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content bg-secondary text-light">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="uploadModalLabel{{ assignment.id }}">ارسال تکلیف: {{ assignment.title }}</h5>
-                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body">
-                                        <form method="POST" action="{{ url_for('upload_assignment') }}" enctype="multipart/form-data">
-                                            <input type="hidden" name="defined_assignment_id" value="{{ assignment.id }}">
+    <!-- Assignments Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">درس‌های من</h3>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if defined_assignments %}
+                        {% set courses = defined_assignments|map(attribute='course')|unique|list %}
+                        <div class="row">
+                            {% for course in courses %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100 border-0 shadow-sm hover-shadow">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ course.name }}</h5>
                                             <div class="mb-3">
-                                                <label for="assignment_file{{ assignment.id }}" class="form-label">فایل تکلیف:</label>
-                                                <input type="file" class="form-control form-control-dark" id="assignment_file{{ assignment.id }}" name="assignment_file" required>
+                                                <span class="badge bg-primary rounded-pill">
+                                                    {{ course.assignments|length }} تکلیف
+                                                </span>
+                                                <span class="badge bg-info rounded-pill">
+                                                    {{ course.enrolled_students|length }} دانشجو
+                                                </span>
                                             </div>
-                                            <button type="submit" class="btn btn-primary w-100">آپلود</button>
-                                        </form>
+                                            <div class="btn-group w-100">
+                                                <a href="{{ url_for('view_course_materials', course_id=course.id) }}" class="btn btn-outline-primary">
+                                                    <i class="bi bi-file-earmark-text"></i> جزوات
+                                                </a>
+                                                <a href="{{ url_for('view_course_assignments', course_id=course.id) }}" class="btn btn-outline-info">
+                                                    <i class="bi bi-list-check"></i> تکالیف
+                                                </a>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            {% endfor %}
                         </div>
-
                     {% else %}
-                         <button type="button" class="btn btn-sm btn-secondary" disabled>
-                            {% if assignment.id in submitted_assignment_ids %}
-                                ارسال شده
-                            {% elif deadline_passed %}
-                                مهلت پایان یافته
-                            {% endif %}
-                        </button>
+                        <div class="alert alert-info border-0">
+                            <i class="bi bi-info-circle"></i> شما هنوز در هیچ درسی ثبت‌نام نکرده‌اید.
+                        </div>
                     {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </div>
+            </div>
+        </div>
     </div>
-{% else %}
-    <p>هیچ تکلیفی هنوز توسط استاد تعریف نشده است.</p>
-{% endif %}
+</div>
 
-<h2 class="mt-5">سابمیشن‌های شما</h2>
-{% if student_submissions %}
-     <div class="table-responsive">
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th scope="col">عنوان تکلیف</th>
-                <th scope="col">تاریخ ارسال</th>
-                <th scope="col">فایل</th>
-                <th scope="col">نمره</th> {# اضافه شدن ستون نمره #}
-                <th scope="col">بازخورد</th> {# اضافه شدن ستون بازخورد #}
-                 <th scope="col">عملیات</th> {# اضافه شدن ستون عملیات #}
-            </tr>
-        </thead>
-        <tbody>
-            {% for submission in student_submissions %}
-            <tr>
-                <td>{{ submission.defined_assignment.title }}</td>
-                <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>{{ submission.filename }}</td>
-                <td>{{ submission.grade if submission.grade else '-' }}</td> {# نمایش نمره #}
-                <td>{{ submission.feedback if submission.feedback else '-' }}</td> {# نمایش بازخورد #}
-                 <td>
-                    <a href="{{ url_for('view_submission', submission_id=submission.id) }}" class="btn btn-sm btn-info text-dark">مشاهده جزئیات</a> {# لینک مشاهده جزئیات #}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-     </div>
-{% else %}
-     <p>شما هنوز فایلی برای هیچ تکلیفی ارسال نکرده‌اید.</p>
-{% endif %}
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const assignmentCards = document.querySelectorAll('.assignment-card');
 
-<p class="text-center mt-4"><a href="{{ url_for('logout') }}" class="btn btn-danger">خروج</a></p>
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Filter cards
+            assignmentCards.forEach(card => {
+                if (filter === 'all' || card.dataset.status === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+}
+.bg-gradient-info {
+    background: linear-gradient(45deg, #36b9cc 0%, #1a8997 100%);
+}
+.bg-gradient-success {
+    background: linear-gradient(45deg, #1cc88a 0%, #13855c 100%);
+}
+.bg-gradient-warning {
+    background: linear-gradient(45deg, #f6c23e 0%, #dda20a 100%);
+}
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #e74a3b 0%, #be2617 100%);
+}
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    transition: all .2s ease-in-out;
+}
+</style>
+{% endblock %}
 {% endblock %}

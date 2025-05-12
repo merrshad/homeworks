@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}پیام‌ها{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>پیام‌ها</h2>
+        <a href="{{ url_for('send_message') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> ارسال پیام جدید
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3 class="mb-3">پیام‌های دریافتی</h3>
+            {% if received_messages %}
+                <div class="list-group">
+                    {% for message in received_messages %}
+                        <div class="list-group-item {% if not message.is_read %}list-group-item-primary{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">از: {{ message.sender.first_name }} {{ message.sender.last_name }}</h5>
+                                <small>{{ message.created_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ message.content }}</p>
+                            {% if message.related_assignment %}
+                                <small class="text-muted">مرتبط با تکلیف: {{ message.related_assignment.title }}</small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    هیچ پیام دریافتی ندارید.
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-6">
+            <h3 class="mb-3">پیام‌های ارسالی</h3>
+            {% if sent_messages %}
+                <div class="list-group">
+                    {% for message in sent_messages %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h5 class="mb-1">به: {{ message.receiver.first_name }} {{ message.receiver.last_name }}</h5>
+                                <small>{{ message.created_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">{{ message.content }}</p>
+                            {% if message.related_assignment %}
+                                <small class="text-muted">مرتبط با تکلیف: {{ message.related_assignment.title }}</small>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    هیچ پیام ارسالی ندارید.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

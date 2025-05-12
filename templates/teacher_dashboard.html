@@ -3,61 +3,280 @@
 {% block title %}داشبورد استاد{% endblock %}
 
 {% block content %}
-<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
-<h1 class="text-center mb-4">داشبورد استاد</h1>
-<p class="text-center">خوش آمدید، استاد {{ current_user.last_name }} عزیز!</p>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">خوش آمدید، {{ current_user.first_name }} {{ current_user.last_name }}</h2>
+                            <p class="mb-0 opacity-75">به داشبورد استادی خود خوش آمدید</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('create_assignment') }}" class="btn btn-light">
+                                <i class="bi bi-plus-circle"></i> ایجاد تکلیف جدید
+                            </a>
+                            <a href="{{ url_for('statistics') }}" class="btn btn-light">
+                                <i class="bi bi-graph-up"></i> آمار و گزارش‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="text-center mb-4">
-    <a href="{{ url_for('manage_courses') }}" class="btn btn-info text-dark">مدیریت درس‌ها</a>
-    <a href="{{ url_for('create_assignment') }}" class="btn btn-primary">برای تعریف تکلیف</a>
+    <!-- Stats Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">درس‌های من</h6>
+                            <h2 class="mb-0">{{ courses|length }}</h2>
+                        </div>
+                        <i class="bi bi-book fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">تکالیف تعریف شده</h6>
+                            <h2 class="mb-0">{{ defined_assignments|length }}</h2>
+                        </div>
+                        <i class="bi bi-file-text fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">در انتظار بررسی</h6>
+                            <h2 class="mb-0">{{ submissions|selectattr('grade', 'none')|list|length }}</h2>
+                        </div>
+                        <i class="bi bi-clock fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-danger text-white border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-1">بررسی شده</h6>
+                            <h2 class="mb-0">{{ submissions|selectattr('grade', 'defined')|list|length }}</h2>
+                        </div>
+                        <i class="bi bi-check-circle fs-1 opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Courses Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">درس‌های من</h3>
+                        <a href="{{ url_for('create_course') }}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> ایجاد درس جدید
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if courses %}
+                        <div class="row">
+                            {% for course in courses %}
+                                <div class="col-md-6 col-lg-4 mb-4">
+                                    <div class="card h-100 border-0 shadow-sm hover-shadow">
+                                        <div class="card-body">
+                                            <h5 class="card-title">{{ course.name }}</h5>
+                                            <div class="mb-3">
+                                                <span class="badge bg-primary rounded-pill">
+                                                    {{ course.assignments|length }} تکلیف
+                                                </span>
+                                                <span class="badge bg-info rounded-pill">
+                                                    {{ course.enrolled_students|length }} دانشجو
+                                                </span>
+                                            </div>
+                                            <div class="btn-group w-100">
+                                                <a href="{{ url_for('manage_course_materials', course_id=course.id) }}" class="btn btn-outline-primary">
+                                                    <i class="bi bi-file-earmark-text"></i> جزوات
+                                                </a>
+                                                <a href="{{ url_for('manage_course_enrollments', course_id=course.id) }}" class="btn btn-outline-info">
+                                                    <i class="bi bi-people"></i> دانشجویان
+                                                </a>
+                                                <a href="{{ url_for('edit_course', course_id=course.id) }}" class="btn btn-outline-secondary">
+                                                    <i class="bi bi-pencil"></i> ویرایش
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Delete Course Modal -->
+                                <div class="modal fade" id="deleteCourseModal{{ course.id }}" tabindex="-1">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content border-0 shadow">
+                                            <div class="modal-header border-0">
+                                                <h5 class="modal-title">حذف درس</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                آیا از حذف درس "{{ course.name }}" اطمینان دارید؟
+                                            </div>
+                                            <div class="modal-footer border-0">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                                <form method="POST" action="{{ url_for('delete_course', course_id=course.id) }}" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">حذف</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info border-0 shadow-sm">
+                            <i class="bi bi-info-circle"></i> شما هنوز درسی ایجاد نکرده‌اید.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Submissions Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">آخرین ارسال‌های تکالیف</h3>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-primary active" data-filter="all">همه</button>
+                            <button type="button" class="btn btn-outline-warning" data-filter="pending">در انتظار بررسی</button>
+                            <button type="button" class="btn btn-outline-success" data-filter="graded">بررسی شده</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if submissions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>دانشجو</th>
+                                        <th>درس</th>
+                                        <th>تکلیف</th>
+                                        <th>تاریخ ارسال</th>
+                                        <th>وضعیت</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for submission in submissions|sort(attribute='upload_date', reverse=true) %}
+                                        <tr class="submission-row" data-status="{% if submission.grade %}graded{% else %}pending{% endif %}">
+                                            <td>{{ submission.student.first_name }} {{ submission.student.last_name }}</td>
+                                            <td>{{ submission.defined_assignment.course.name }}</td>
+                                            <td>{{ submission.defined_assignment.title }}</td>
+                                            <td>{{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>
+                                                {% if submission.grade %}
+                                                    <span class="badge bg-success rounded-pill">بررسی شده</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning rounded-pill">در انتظار بررسی</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <a href="{{ url_for('view_submission', submission_id=submission.id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                    {% if not submission.grade %}
+                                                        <a href="{{ url_for('grade_submission', submission_id=submission.id) }}" class="btn btn-sm btn-outline-success">
+                                                            <i class="bi bi-check-circle"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info border-0 shadow-sm">
+                            <i class="bi bi-info-circle"></i> هنوز هیچ تکلیفی ارسال نشده است.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const submissionRows = document.querySelectorAll('.submission-row');
 
-<h2 class="mt-5" id="assignments">تکالیف تعریف شده شما</h2> {# اضافه شدن id برای لینک از صفحه مدیریت درس #}
-{% if defined_assignments %}
-    <div class="table-responsive">
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th scope="col">عنوان</th>
-                <th scope="col">درس</th>
-                <th scope="col">تاریخ تعریف</th>
-                <th scope="col">مهلت ارسال</th>
-                <th scope="col">عملیات</th>
-                <th scope="col">حذف</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for assignment in defined_assignments %}
-            <tr>
-                <td><a href="{{ url_for('assignment_submissions', assignment_id=assignment.id) }}" class="text-light">{{ assignment.title }}</a></td>
-                <td>{{ assignment.course.name if assignment.course else '-' }}</td> {# استفاده از assignment.course.name #}
-                <td>{{ assignment.created_date.strftime('%Y-%m-%d %H:%M') }}</td>
-                <td>
-                    {% if assignment.deadline %}
-                        {{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}
-                    {% else %}
-                        نامحدود
-                    {% endif %}
-                </td>
-                 <td>
-                    <a href="{{ url_for('edit_assignment', assignment_id=assignment.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                </td>
-                <td>
-                    <form action="{{ url_for('delete_assignment', assignment_id=assignment.id) }}" method="POST" onsubmit="return confirm('آیا از حذف این تکلیف مطمئن هستید؟ تمام فایل‌های ارسالی مربوط به این تکلیف نیز حذف خواهند شد.');">
-                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
-{% else %}
-    <p>شما هنوز تکلیفی تعریف نکرده‌اید.</p>
-{% endif %}
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
 
-{# بخش نمایش تمام سابمیشن‌ها حذف شده است #}
+            // Filter rows
+            submissionRows.forEach(row => {
+                if (filter === 'all' || row.dataset.status === filter) {
+                    row.style.display = 'table-row';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
 
-<p class="text-center mt-4"><a href="{{ url_for('logout') }}" class="btn btn-danger">خروج</a></p>
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(45deg, #4e73df 0%, #224abe 100%);
+}
+.bg-gradient-info {
+    background: linear-gradient(45deg, #36b9cc 0%, #1a8997 100%);
+}
+.bg-gradient-success {
+    background: linear-gradient(45deg, #1cc88a 0%, #13855c 100%);
+}
+.bg-gradient-warning {
+    background: linear-gradient(45deg, #f6c23e 0%, #dda20a 100%);
+}
+.bg-gradient-danger {
+    background: linear-gradient(45deg, #e74a3b 0%, #be2617 100%);
+}
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    transition: all .2s ease-in-out;
+}
+</style>
+{% endblock %}
 {% endblock %}

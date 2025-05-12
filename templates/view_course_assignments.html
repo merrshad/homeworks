@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}تکالیف {{ course.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">تکالیف {{ course.name }}</h2>
+                            <p class="text-muted mb-0">استاد: {{ course.teacher.first_name }} {{ course.teacher.last_name }}</p>
+                        </div>
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignments Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">لیست تکالیف</h3>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-outline-primary active" data-filter="all">همه</button>
+                            <button type="button" class="btn btn-outline-success" data-filter="submitted">ارسال شده</button>
+                            <button type="button" class="btn btn-outline-warning" data-filter="pending">در انتظار</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if assignments %}
+                        <div class="row">
+                            {% for assignment in assignments %}
+                                <div class="col-md-6 col-lg-4 mb-4 assignment-card" 
+                                     data-status="{% if assignment.id in submitted_assignment_ids %}submitted{% else %}pending{% endif %}">
+                                    <div class="card h-100 border-0 shadow-sm hover-shadow">
+                                        <div class="card-header bg-white border-0">
+                                            <h5 class="card-title mb-0">
+                                                <a href="{{ url_for('view_assignment_details', assignment_id=assignment.id) }}" class="text-decoration-none">
+                                                    {{ assignment.title }}
+                                                </a>
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            {% if assignment.description %}
+                                                <p class="card-text">{{ assignment.description|truncate(100) }}</p>
+                                            {% endif %}
+                                            <div class="small text-muted mb-3">
+                                                <i class="bi bi-calendar"></i> تاریخ ایجاد: {{ assignment.created_date.strftime('%Y-%m-%d') }}
+                                                {% if assignment.deadline %}
+                                                    <br>
+                                                    <i class="bi bi-clock"></i> مهلت ارسال: {{ assignment.deadline.strftime('%Y-%m-%d %H:%M') }}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="card-footer bg-white border-0">
+                                            {% if assignment.id in submitted_assignment_ids %}
+                                                {% set submission = submission_by_assignment[assignment.id] %}
+                                                <div class="alert alert-success mb-0 border-0">
+                                                    <i class="bi bi-check-circle"></i> ارسال شده
+                                                    <small class="d-block">
+                                                        تاریخ ارسال: {{ submission.upload_date.strftime('%Y-%m-%d %H:%M') }}
+                                                        {% if submission.grade %}
+                                                            <br>نمره: {{ submission.grade }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            {% else %}
+                                                <form method="POST" action="{{ url_for('upload_assignment') }}" enctype="multipart/form-data">
+                                                    <input type="hidden" name="defined_assignment_id" value="{{ assignment.id }}">
+                                                    <div class="input-group">
+                                                        <input type="file" class="form-control form-control-sm" name="assignment_file" required>
+                                                        <button type="submit" class="btn btn-primary btn-sm">
+                                                            <i class="bi bi-upload"></i> ارسال
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info border-0">
+                            <i class="bi bi-info-circle"></i> هنوز هیچ تکلیفی برای این درس تعریف نشده است.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const assignmentCards = document.querySelectorAll('.assignment-card');
+
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Filter cards
+            assignmentCards.forEach(card => {
+                if (filter === 'all' || card.dataset.status === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+
+<style>
+.hover-shadow:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    transition: all .2s ease-in-out;
+}
+</style>
+{% endblock %}
+{% endblock %} 

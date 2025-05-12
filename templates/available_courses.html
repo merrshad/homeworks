@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}درس‌های قابل ثبت‌نام{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>درس‌های قابل ثبت‌نام</h2>
+        <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- درس‌های قابل ثبت‌نام -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">درس‌های جدید</h3>
+                </div>
+                <div class="card-body">
+                    {% if available_courses %}
+                        <div class="list-group">
+                            {% for course in available_courses %}
+                                <div class="list-group-item">
+                                    <h5 class="mb-1">{{ course.name }}</h5>
+                                    <p class="mb-1 text-muted">استاد: {{ course.teacher.first_name }} {{ course.teacher.last_name }}</p>
+                                    <form method="POST" action="{{ url_for('enroll_course', course_id=course.id) }}" class="mt-2">
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-plus-circle"></i> ثبت‌نام در درس
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            در حال حاضر درس جدیدی برای ثبت‌نام وجود ندارد.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- درس‌های ثبت‌نام شده -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">درس‌های ثبت‌نام شده</h3>
+                </div>
+                <div class="card-body">
+                    {% if enrolled_courses %}
+                        <div class="list-group">
+                            {% for enrollment in enrolled_courses %}
+                                <div class="list-group-item">
+                                    <h5 class="mb-1">{{ enrollment.course.name }}</h5>
+                                    <p class="mb-1 text-muted">
+                                        استاد: {{ enrollment.course.teacher.first_name }} {{ enrollment.course.teacher.last_name }}<br>
+                                        تاریخ ثبت‌نام: {{ enrollment.enrollment_date.strftime('%Y-%m-%d') }}
+                                    </p>
+                                    <form method="POST" action="{{ url_for('unenroll_course', course_id=enrollment.course.id) }}" class="mt-2">
+                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('آیا از لغو ثبت‌نام در این درس اطمینان دارید؟')">
+                                            <i class="bi bi-x-circle"></i> لغو ثبت‌نام
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            شما هنوز در هیچ درسی ثبت‌نام نکرده‌اید.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

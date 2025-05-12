@@ -3,36 +3,65 @@
 {% block title %}ایجاد تکلیف جدید{% endblock %}
 
 {% block content %}
-<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
-<h1 class="text-center mb-4">ایجاد تکلیف جدید</h1>
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-gradient-primary text-white border-0 shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">ایجاد تکلیف جدید</h2>
+                            <p class="mb-0 opacity-75">تعریف تکلیف جدید برای دانشجویان</p>
+                        </div>
+                        <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-light">
+                            <i class="bi bi-arrow-right"></i> بازگشت به داشبورد
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="card bg-secondary text-light mb-4">
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('create_assignment') }}">
-            <div class="mb-3">
-                <label for="title" class="form-label">عنوان تکلیف:</label>
-                <input type="text" class="form-control form-control-dark" id="title" name="title" required>
+    <!-- Create Assignment Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="course_id" class="form-label">درس</label>
+                            <select class="form-select" id="course_id" name="course_id" required>
+                                <option value="">انتخاب درس...</option>
+                                {% for course in courses %}
+                                    <option value="{{ course.id }}">{{ course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="title" class="form-label">عنوان تکلیف</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">توضیحات</label>
+                            <textarea class="form-control" id="description" name="description" rows="4"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="deadline" class="form-label">مهلت ارسال</label>
+                            <input type="datetime-local" class="form-control" id="deadline" name="deadline">
+                        </div>
+                        <div class="mb-3">
+                            <label for="attachment" class="form-label">فایل پیوست (اختیاری)</label>
+                            <input type="file" class="form-control" id="attachment" name="attachment">
+                            <div class="form-text">می‌توانید فایل‌های مورد نیاز برای تکلیف را پیوست کنید.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> ایجاد تکلیف
+                        </button>
+                    </form>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="course_id" class="form-label">درس:</label>
-                <select class="form-select form-select-dark" id="course_id" name="course_id" required>
-                    {% for course in courses %}
-                        <option value="{{ course.id }}">{{ course.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="description" class="form-label">توضیحات:</label>
-                <textarea class="form-control form-control-dark" id="description" name="description" rows="3"></textarea>
-            </div>
-            <div class="mb-3">
-                <label for="deadline" class="form-label">مهلت ارسال:</label>
-                <input type="datetime-local" class="form-control form-control-dark" id="deadline" name="deadline">
-            </div>
-            <button type="submit" class="btn btn-primary">ایجاد تکلیف</button>
-             <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">انصراف</a>
-        </form>
+        </div>
     </div>
 </div>
-
 {% endblock %}

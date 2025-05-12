@@ -3,54 +3,72 @@
 {% block title %}مدیریت درس‌ها{% endblock %}
 
 {% block content %}
-<button class="btn btn-secondary mb-3" onclick="history.back()">بازگشت</button>
-<h1 class="text-center mb-4">مدیریت درس‌های شما</h1>
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>مدیریت درس‌ها</h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCourseModal">
+            <i class="bi bi-plus-lg"></i> ایجاد درس جدید
+        </button>
+    </div>
 
-<h2 class="mt-5">ایجاد درس جدید</h2>
-<div class="card bg-secondary text-light mb-4">
-    <div class="card-body">
-        <form method="POST" action="{{ url_for('create_course') }}">
-            <div class="mb-3">
-                <label for="name" class="form-label">نام درس:</label>
-                <input type="text" class="form-control form-control-dark" id="name" name="name" required>
+    {% if courses %}
+        <div class="row">
+            {% for course in courses %}
+                <div class="col-md-4 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ course.name }}</h5>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    تعداد تکالیف: {{ course.assignments|length }}
+                                </small>
+                            </p>
+                            <div class="btn-group">
+                                <a href="{{ url_for('edit_course', course_id=course.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> ویرایش
+                                </a>
+                                <a href="{{ url_for('manage_course_enrollments', course_id=course.id) }}" class="btn btn-outline-info">
+                                    <i class="bi bi-people"></i> مدیریت دانشجویان
+                                </a>
+                                <form method="POST" action="{{ url_for('delete_course', course_id=course.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-outline-danger" onclick="return confirm('آیا از حذف این درس اطمینان دارید؟')">
+                                        <i class="bi bi-trash"></i> حذف
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            شما هنوز درسی ایجاد نکرده‌اید.
+        </div>
+    {% endif %}
+
+    <!-- Modal ایجاد درس جدید -->
+    <div class="modal fade" id="createCourseModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">ایجاد درس جدید</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('create_course') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">نام درس</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="submit" class="btn btn-primary">ایجاد درس</button>
+                    </div>
+                </form>
             </div>
-            <button type="submit" class="btn btn-primary">ایجاد درس</button>
-        </form>
+        </div>
     </div>
 </div>
-
-<h2 class="mt-5">لیست درس‌های شما</h2>
-{% if courses %}
-    <div class="table-responsive">
-    <table class="table table-dark table-striped">
-        <thead>
-            <tr>
-                <th scope="col">نام درس</th>
-                <th scope="col">عملیات</th>
-                <th scope="col">تکالیف درس</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for course in courses %}
-            <tr>
-                <td>{{ course.name }}</td>
-                 <td>
-                    <a href="{{ url_for('edit_course', course_id=course.id) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                     <form action="{{ url_for('delete_course', course_id=course.id) }}" method="POST" onsubmit="return confirm('آیا از حذف درس {{ course.name }} مطمئن هستید؟ تمام تکالیف و فایل‌های ارسالی مربوط به این درس نیز حذف خواهند شد.');" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-danger">حذف</button>
-                    </form>
-                </td>
-                 <td>
-                    <a href="{{ url_for('teacher_dashboard') }}#assignments" class="btn btn-sm btn-info text-dark">مشاهده تکالیف</a> {# نیاز به فیلتر در داشبورد استاد یا صفحه جدید #}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    </div>
-{% else %}
-    <p>شما هنوز درسی تعریف نکرده‌اید.</p>
-{% endif %}
-
-<p class="text-center mt-4"><a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">بازگشت به داشبورد</a></p>
 {% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}اعلان‌ها{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">اعلان‌ها</h2>
+    
+    {% if notifications %}
+        <div class="list-group">
+            {% for notification in notifications %}
+                <div class="list-group-item {% if not notification.is_read %}list-group-item-primary{% endif %}">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ notification.title }}</h5>
+                        <small>{{ notification.created_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    {% if not notification.is_read %}
+                        <form action="{{ url_for('mark_notification_read', notification_id=notification.id) }}" method="POST" class="mt-2">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">علامت‌گذاری به عنوان خوانده شده</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            هیچ اعلانی ندارید.
+        </div>
+    {% endif %}
+</div>
+{% endblock %} 
